@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <title>Crear Imperio - Empires &amp; Allies</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .register-box {
+            background: #0f3460;
+            border-radius: 20px;
+            padding: 40px;
+            width: 400px;
+            text-align: center;
+        }
+        h2 { color: white; margin-bottom: 20px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            background: #1a1a2e;
+            color: white;
+            font-size: 16px;
+        }
+        .avatar-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        .avatar-option {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+        .avatar-option.selected { border-color: #e94560; transform: scale(1.05); }
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover { background: #ff6b8a; }
+        .login-link { margin-top: 20px; color: #aaa; }
+        .login-link a { color: #e94560; text-decoration: none; }
+        .error { color: #ff6b8a; margin-top: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="register-box">
+        <h2>🏰 Crear Nuevo Imperio</h2>
+        <input type="text" id="username" placeholder="Nombre de usuario">
+        <input type="password" id="password" placeholder="Contraseña">
+        <input type="password" id="confirm" placeholder="Confirmar contraseña">
+        
+        <p style="color:white;">Elige tu avatar:</p>
+        <div class="avatar-select" id="avatarSelect">
+            <img src="img/avatars/2_PincusCP_100.png" class="avatar-option" data-avatar="img/avatars/2_PincusCP_100.png">
+            <img src="img/avatars/4_NavyCP_04_100.png" class="avatar-option" data-avatar="img/avatars/4_NavyCP_04_100.png">
+            <img src="img/avatars/8_HansCP_100.png" class="avatar-option" data-avatar="img/avatars/8_HansCP_100.png">
+            <img src="img/avatars/11_ArmyCP_03_100.png" class="avatar-option" data-avatar="img/avatars/11_ArmyCP_03_100.png">
+            <img src="img/avatars/blank.png" class="avatar-option selected" data-avatar="img/avatars/blank.png">
+        </div>
+        
+        <button onclick="doRegister()">⚔️ Crear Imperio ⚔️</button>
+        <div id="errorMsg" class="error"></div>
+        <div class="login-link">¿Ya tienes imperio? <a href="login.html">Iniciar sesión</a></div>
+    </div>
+    <script>
+        let selectedAvatar = 'img/avatars/blank.png';
+        
+        document.querySelectorAll('.avatar-option').forEach(img => {
+            img.addEventListener('click', function() {
+                document.querySelectorAll('.avatar-option').forEach(i => i.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedAvatar = this.getAttribute('data-avatar');
+            });
+        });
+        
+        async function doRegister() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm').value;
+            const errorMsg = document.getElementById('errorMsg');
+            
+            if (!username || !password) {
+                errorMsg.textContent = 'Completa todos los campos';
+                return;
+            }
+            if (password !== confirm) {
+                errorMsg.textContent = 'Las contraseñas no coinciden';
+                return;
+            }
+            if (username.length < 3) {
+                errorMsg.textContent = 'Usuario debe tener al menos 3 caracteres';
+                return;
+            }
+            if (password.length < 4) {
+                errorMsg.textContent = 'Contraseña debe tener al menos 4 caracteres';
+                return;
+            }
+            
+            errorMsg.textContent = 'Creando imperio...';
+            
+            try {
+                const response = await fetch('/api/create_user.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, avatar: selectedAvatar })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    localStorage.setItem('current_player', JSON.stringify(data.player));
+                    window.location.href = 'home.html';
+                } else {
+                    errorMsg.textContent = data.error;
+                }
+            } catch(e) {
+                errorMsg.textContent = 'Error de conexión: ' + e.message;
+            }
+        }
+    </script>
+</body>
+</html>

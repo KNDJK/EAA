@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <title>Empires &amp; Allies - Juego</title>
+    <link rel="shortcut icon" href="img/icon.png"/>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #1a1a2e; 
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        .logout-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #e94560;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 12px;
+            z-index: 1001;
+            cursor: pointer;
+        }
+        .logout-btn:hover { background: #ff6b8a; }
+        #game-container {
+            position: relative;
+            width: 1000px;
+            height: 750px;
+            margin: 0 auto;
+            margin-top: 10px;
+        }
+        #loading_game {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1000px;
+            height: 750px;
+            background: #1a1a2e;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+        }
+        #loading_message { 
+            color: white; 
+            font-size: 24px; 
+            margin-bottom: 20px; 
+            font-family: Arial; 
+        }
+        #progress_bar { 
+            width: 300px; 
+            height: 20px; 
+            background: #333; 
+            border-radius: 10px; 
+            overflow: hidden; 
+        }
+        #inner_progress_bar { 
+            width: 0%; 
+            height: 100%; 
+            background: #e94560; 
+            transition: width 0.3s;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="js/socketio.js"></script>
+    <script src="js/flash.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/empires.js"></script>
+</head>
+<body>
+    <a href="logout.html" class="logout-btn" onclick="logout(); return false;">🚪 Salir</a>
+    
+    <div id="game-container">
+        <div id="game_object">
+            <object width="1000" height="750" id="ea">
+                <param name="movie" value="files/empire-s.assets.zgncdn.com/assets/109338/ZGame.109338_tracer2.swf">
+                <param name="allowFullScreen" value="true">
+                <param name="bgcolor" value="#333399">
+                <embed src="files/empire-s.assets.zgncdn.com/assets/109338/ZGame.109338_tracer2.swf" 
+                       allowFullScreen="true" 
+                       bgcolor="#333399" 
+                       width="1000" 
+                       height="750" 
+                       type="application/x-shockwave-flash" 
+                       pluginspage="http://www.macromedia.com/go/getflashplayer">
+            </object>
+        </div>
+        <div id="loading_game">
+            <div id="loading_message">⚔️ Cargando tu imperio... ⚔️</div>
+            <div id="progress_bar"><div id="inner_progress_bar"></div></div>
+        </div>
+    </div>
+    
+    <script>
+        // Verificar que el jugador está logueado
+        const currentPlayer = localStorage.getItem('current_player');
+        if (!currentPlayer) {
+            window.location.href = 'login.html';
+        }
+        
+        // Función para actualizar la barra de progreso
+        function updateProgress(percent) {
+            const bar = document.getElementById('inner_progress_bar');
+            const msg = document.getElementById('loading_message');
+            if (bar) bar.style.width = Math.min(percent, 100) + '%';
+            if (msg && percent < 100) {
+                msg.innerHTML = '⚔️ Cargando tu imperio... ' + Math.min(percent, 100) + '% ⚔️';
+            }
+            if (percent >= 100) {
+                if (msg) msg.innerHTML = '✅ ¡Imperio listo! ✅';
+                // Ocultar la pantalla de carga después de llegar al 100%
+                setTimeout(function() {
+                    const loading = document.getElementById('loading_game');
+                    if (loading) loading.style.display = 'none';
+                    console.log("Pantalla de carga ocultada al 100%");
+                }, 800);
+            }
+        }
+        
+        // Barra de progreso animada
+        let progress = 0;
+        const interval = setInterval(function() {
+            progress += 5;
+            if (progress >= 100) {
+                clearInterval(interval);
+                updateProgress(100);
+            } else {
+                updateProgress(progress);
+            }
+        }, 250);
+        
+        // SEGURIDAD: Forzar ocultar la pantalla de carga después de 8 segundos
+        // (por si el SWF no llama a inner_onGameLoaded)
+        setTimeout(function() {
+            const loading = document.getElementById('loading_game');
+            if (loading && loading.style.display !== 'none') {
+                loading.style.display = 'none';
+                console.log("Pantalla de carga ocultada por tiempo de seguridad (8s)");
+            }
+        }, 8000);
+        
+        // También intentar ocultar cuando el SWF llame a inner_onGameLoaded
+        // Esta función es llamada por empires.js cuando el juego termina de cargar
+        window.forceHideLoading = function() {
+            const loading = document.getElementById('loading_game');
+            if (loading) {
+                loading.style.display = 'none';
+                console.log("Pantalla de carga ocultada por juego");
+            }
+        };
+        
+        console.log("Home.html cargado - Esperando juego...");
+    </script>
+</body>
+</html>
